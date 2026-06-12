@@ -1,4 +1,4 @@
-"""Streamlit dashboard showcasing the owner's Spotify playlists.
+"""Streamlit dashboard showcasing the owner's "goated" Spotify playlist.
 
 Quick start:
     pip install -r requirements.txt
@@ -21,7 +21,7 @@ import spotify_client as sc
 
 load_dotenv()
 
-DEFAULT_PLAYLIST = "59NdHYUwBpNCIjPWrrL2yX"  # your "goated" playlist
+PLAYLIST_ID = "59NdHYUwBpNCIjPWrrL2yX"  # the "goated" playlist — the only one shown
 
 # Warm graphic-EQ palette: amber lead, teal/coral/gold supporting.
 AMBER = "#F2A93B"
@@ -70,38 +70,11 @@ def load_data(playlist_id: str, _sp):
     return meta, df
 
 
-@st.cache_data(ttl=900, show_spinner=False)
-def load_playlists(_sp):
-    return sc.fetch_my_playlists(_sp)
-
-
 # --------------------------------------------------------------------------
 sp = get_spotify()
-playlists = load_playlists(sp)
-
-if not playlists:
-    st.warning("No playlists found on the connected account.")
-    st.stop()
-
-ids = [p["id"] for p in playlists]
-# Feb 2026 API: the playlist object's track summary is "items", not "tracks".
-labels = {p["id"]: f'{p["name"]}  ·  {(p.get("items") or {}).get("total", "?")} tracks' for p in playlists}
-
-with st.sidebar:
-    st.header("🎚️ Playlist Dashboard")
-    playlist_id = st.selectbox(
-        "Choose a playlist",
-        ids,
-        index=ids.index(DEFAULT_PLAYLIST) if DEFAULT_PLAYLIST in ids else 0,
-        format_func=lambda pid: labels[pid],
-    )
-    if st.button("↻ Reload data", use_container_width=True):
-        load_data.clear()
-        load_playlists.clear()
-        st.rerun()
 
 try:
-    meta, df = load_data(playlist_id, sp)
+    meta, df = load_data(PLAYLIST_ID, sp)
 except spotipy.SpotifyException as e:
     st.error(f"Spotify returned an error (HTTP {e.http_status}). Try another playlist.")
     st.stop()

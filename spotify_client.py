@@ -64,25 +64,6 @@ def get_client() -> spotipy.Spotify:
     return spotipy.Spotify(auth_manager=oauth, retries=3, status_retries=3)
 
 
-def fetch_my_playlists(sp: spotipy.Spotify) -> list[dict[str, Any]]:
-    """The owner's own + collaborative playlists (the ones we can read fully).
-
-    current_user_playlists also returns playlists the owner merely follows,
-    but Spotify won't serve items for those, so they're filtered out.
-    """
-    me = sp.me()["id"]
-    playlists: list[dict[str, Any]] = []
-    results = sp.current_user_playlists(limit=50)
-    playlists.extend(results["items"])
-    while results.get("next"):
-        results = sp.next(results)
-        playlists.extend(results["items"])
-    return [
-        p for p in playlists
-        if p and ((p.get("owner") or {}).get("id") == me or p.get("collaborative"))
-    ]
-
-
 def fetch_all_playlist_items(sp: spotipy.Spotify, playlist_id: str) -> list[dict[str, Any]]:
     """Page through every track in a playlist (handles playlists >100 tracks)."""
     items: list[dict[str, Any]] = []

@@ -1,9 +1,9 @@
 # 🎚️ Spotify Playlist Dashboard
 
-A Streamlit dashboard that showcases **your** Spotify playlists to anyone
-with the link — visitors never log in. Pick a playlist from the dropdown and
-it renders charts for artists, genres, release decades, popularity, track
-length, and growth over time.
+A Streamlit dashboard that showcases a single curated Spotify playlist to
+anyone with the link — visitors never log in. It renders charts for artists,
+albums, release decades, track length, curation activity, and growth over
+time. (The playlist ID is set at the top of `app.py`.)
 
 ## How it works (and why)
 
@@ -17,7 +17,7 @@ Spotify's **February 2026** dev-mode rules shaped this design:
 
 So this app uses the **curator-showcase** pattern: the owner authorizes once
 (`mint_refresh_token.py`), the long-lived **refresh token** is stored as a
-server secret, and the server reads the owner's playlists on every visitor's
+server secret, and the server reads the owner's playlist on every visitor's
 behalf. Unlimited visitors, zero logins, read-only playlist scopes.
 
 > Also due to dev-mode limits: artist **genre** and track **popularity**
