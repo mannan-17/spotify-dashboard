@@ -31,6 +31,10 @@ behalf. Unlimited visitors, zero logins, read-only playlist scopes.
 - **Most-featured artists** and **top albums**
 - **Tracks by decade** and a **growth-over-time** chart (from "date added")
 - **Curation activity** (tracks added per year) and **track-length** distribution
+- **🧠 Taste profile** — research-inspired stats (artist diversity, discovery
+  ratio, loyalty, era spread) plus an interactive **formative-years** checker:
+  enter a birth year and see how much of the playlist lands in the ages 10–25
+  "reminiscence bump" window ([background](https://en.wikipedia.org/wiki/Psychology_of_music_preference))
 - Sortable tables (recently added, oldest, all tracks) with **CSV export**
 
 ## Setup

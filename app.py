@@ -18,6 +18,7 @@ import streamlit as st
 from dotenv import load_dotenv
 
 import spotify_client as sc
+import taste
 
 load_dotenv()
 
@@ -164,6 +165,62 @@ with r3[1]:
     fig = px.histogram(x=df["duration_min"], nbins=20, title="Track length distribution")
     fig.update_traces(marker_color="#8E7DBE")
     fig.update_layout(xaxis_title="Duration (min)", yaxis_title="Tracks")
+    st.plotly_chart(style(fig), use_container_width=True)
+
+st.divider()
+
+# ---- Taste profile (research-inspired, not a personality test) -------------
+st.subheader("🧠 Taste profile")
+st.caption(
+    "Lenses borrowed from the [psychology of music preference]"
+    "(https://en.wikipedia.org/wiki/Psychology_of_music_preference) "
+    "literature — descriptive stats about this playlist, not a diagnosis."
+)
+
+tp = st.columns(4)
+tp[0].metric(
+    "Diversity", f"{taste.diversity_score(df)}/100",
+    help="Normalized Shannon entropy of the artist mix. Research links broad, "
+         "even listening with openness to experience.",
+)
+tp[1].metric(
+    "Discovery ratio", f"{taste.discovery_ratio(df)}%",
+    help="Share of artists appearing exactly once — a novelty-seeking signal.",
+)
+tp[2].metric(
+    "Loyalty index", f"{taste.loyalty_index(df)}%",
+    help="Share of tracks from the top-5 artists. The mere-exposure effect: "
+         "familiarity breeds liking.",
+)
+tp[3].metric(
+    "Era spread", f"±{taste.era_spread(df)} yrs",
+    help="Standard deviation of release years — how far the playlist roams in time.",
+)
+
+fy = st.columns([1, 2])
+with fy[0]:
+    st.markdown("**Whose formative years?**")
+    birth_year = st.number_input(
+        "Your birth year", min_value=1930, max_value=2016, value=2000, step=1,
+    )
+    share, win_lo, win_hi = taste.formative_share(df, int(birth_year))
+    st.metric(
+        "From your formative years", f"{share}%",
+        help=f"Tracks released {win_lo}–{win_hi}, while you were "
+             f"{taste.FORMATIVE_START_AGE}–{taste.FORMATIVE_END_AGE}. Research "
+             "suggests musical taste crystallizes in that window (the "
+             "'reminiscence bump').",
+    )
+with fy[1]:
+    year_counts = df["release_year"].dropna().astype(int).value_counts().sort_index()
+    fig = px.bar(x=year_counts.index, y=year_counts.values, title="Tracks by release year")
+    fig.update_traces(marker_color="#5B8C5A")
+    fig.add_vrect(
+        x0=win_lo - 0.5, x1=win_hi + 0.5,
+        fillcolor=AMBER, opacity=0.18, line_width=0,
+        annotation_text="your formative years", annotation_font_color=AMBER,
+    )
+    fig.update_layout(xaxis_title="", yaxis_title="Tracks")
     st.plotly_chart(style(fig), use_container_width=True)
 
 st.divider()
