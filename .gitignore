@@ -1,0 +1,8 @@
+.env
+.spotify_token_cache
+.claude/
+.venv/
+__pycache__/
+*.pyc
+playlist.csv
+.cache
