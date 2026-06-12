@@ -35,6 +35,13 @@ behalf. Unlimited visitors, zero logins, read-only playlist scopes.
   ratio, loyalty, era spread) plus an interactive **formative-years** checker:
   enter a birth year and see how much of the playlist lands in the ages 10–25
   "reminiscence bump" window ([background](https://en.wikipedia.org/wiki/Psychology_of_music_preference))
+- **🎭 How it sounds** — a mood map (valence × energy circumplex with
+  euphoric/aggressive/melancholic/serene quadrants), sound-profile averages,
+  and a tempo distribution. Audio features come from
+  [ReccoBeats](https://reccobeats.com) (free, no auth) since Spotify removed
+  its own audio-features endpoints; unmatched tracks are recovered by
+  searching for canonical versions (artist + duration verified), and the
+  remainder is listed honestly rather than guessed.
 - Sortable tables (recently added, oldest, all tracks) with **CSV export**
 
 ## Setup

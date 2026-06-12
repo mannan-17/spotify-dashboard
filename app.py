@@ -17,6 +17,7 @@ import spotipy
 import streamlit as st
 from dotenv import load_dotenv
 
+import reccobeats
 import spotify_client as sc
 import taste
 
@@ -58,6 +59,12 @@ def get_spotify():
     alive for the whole server process.
     """
     return sc.get_client()
+
+
+@st.cache_data(ttl=900, show_spinner="Analyzing how the playlist sounds…")
+def load_features(playlist_id: str, _df, _sp):
+    """Audio features via ReccoBeats; keyed on playlist_id (df mirrors it)."""
+    return reccobeats.fetch_features(_sp, _df)
 
 
 @st.cache_data(ttl=900, show_spinner="Loading playlist from Spotify…")
@@ -222,6 +229,101 @@ with fy[1]:
     )
     fig.update_layout(xaxis_title="", yaxis_title="Tracks")
     st.plotly_chart(style(fig), use_container_width=True)
+
+st.divider()
+
+# ---- How it sounds (audio features via ReccoBeats) -------------------------
+st.subheader("🎭 How it sounds")
+
+try:
+    fdf = load_features(PLAYLIST_ID, df, sp)
+except Exception:
+    fdf = None
+
+analyzed = fdf.dropna(subset=["energy", "valence"]) if fdf is not None else None
+
+if analyzed is None or analyzed.empty:
+    st.info(
+        "Audio features are temporarily unavailable (the third-party "
+        "analysis API didn't respond). The rest of the dashboard is unaffected."
+    )
+else:
+    st.caption(
+        f"Audio features for **{len(analyzed)} of {len(fdf)}** tracks, independently "
+        "estimated by [ReccoBeats](https://reccobeats.com) — Spotify no longer "
+        "provides these, so values are directional, not official."
+    )
+
+    sound = st.columns(5)
+    sound[0].metric("Energy", f"{analyzed['energy'].mean():.2f}",
+                    help="0 = calm, 1 = intense. Playlist average.")
+    sound[1].metric("Valence", f"{analyzed['valence'].mean():.2f}",
+                    help="Musical positivity: 0 = dark/sad, 1 = euphoric.")
+    sound[2].metric("Danceability", f"{analyzed['danceability'].mean():.2f}",
+                    help="Rhythmic groove: 0 = free-form, 1 = made for dancing.")
+    sound[3].metric("Acousticness", f"{analyzed['acousticness'].mean():.2f}",
+                    help="0 = electric/produced, 1 = acoustic.")
+    sound[4].metric("Tempo", f"{analyzed['tempo'].mean():.0f} BPM",
+                    help="Average beats per minute.")
+
+    # Mood map: Russell's circumplex — valence (x) vs energy (y).
+    mood = analyzed.copy()
+    mood["quadrant"] = mood.apply(
+        lambda r: ("Euphoric" if r["valence"] >= 0.5 else "Aggressive")
+        if r["energy"] >= 0.5
+        else ("Serene" if r["valence"] >= 0.5 else "Melancholic"),
+        axis=1,
+    )
+    quad_colors = {
+        "Euphoric": "#E8C547", "Aggressive": "#E2574C",
+        "Melancholic": "#8E7DBE", "Serene": "#3FB8AF",
+    }
+    counts = mood["quadrant"].value_counts()
+    fig = px.scatter(
+        mood, x="valence", y="energy", color="quadrant",
+        color_discrete_map=quad_colors, hover_name="name",
+        hover_data={"primary_artist": True, "quadrant": False,
+                    "valence": ":.2f", "energy": ":.2f"},
+        title="Mood map — every track by feel",
+    )
+    fig.update_traces(marker=dict(size=9, opacity=0.85))
+    fig.add_hline(y=0.5, line_color="rgba(255,255,255,0.15)", line_dash="dot")
+    fig.add_vline(x=0.5, line_color="rgba(255,255,255,0.15)", line_dash="dot")
+    for label, (qx, qy) in {
+        "Euphoric": (0.97, 0.97), "Aggressive": (0.03, 0.97),
+        "Melancholic": (0.03, 0.03), "Serene": (0.97, 0.03),
+    }.items():
+        fig.add_annotation(
+            x=qx, y=qy, text=f"{label} · {counts.get(label, 0)}",
+            showarrow=False, font=dict(size=12, color=quad_colors[label]),
+            xanchor="right" if qx > 0.5 else "left",
+        )
+    fig.update_layout(
+        xaxis=dict(title="Valence  (sad → happy)", range=[-0.02, 1.02]),
+        yaxis=dict(title="Energy  (calm → intense)", range=[-0.02, 1.02]),
+        showlegend=False,
+    )
+    st.plotly_chart(style(fig, height=480), use_container_width=True)
+
+    snd = st.columns(2)
+    with snd[0]:
+        fig = px.histogram(x=analyzed["tempo"], nbins=25, title="Tempo distribution")
+        fig.update_traces(marker_color="#D98C5F")
+        fig.update_layout(xaxis_title="BPM", yaxis_title="Tracks")
+        st.plotly_chart(style(fig), use_container_width=True)
+    with snd[1]:
+        unanalyzed = fdf[fdf["energy"].isna()]
+        if not unanalyzed.empty:
+            st.markdown(f"**Not analyzable yet ({len(unanalyzed)})**")
+            st.caption(
+                "Not in ReccoBeats' analysis corpus under any pressing — mostly "
+                "regional catalog and very new releases. They'll join the mood "
+                "map automatically once analyzed upstream."
+            )
+            st.dataframe(
+                unanalyzed[["name", "primary_artist", "release_year"]],
+                hide_index=True, use_container_width=True, height=280,
+            )
 
 st.divider()
 
