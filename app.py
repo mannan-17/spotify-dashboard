@@ -208,7 +208,7 @@ fy = st.columns([1, 2])
 with fy[0]:
     st.markdown("**Whose formative years?**")
     birth_year = st.number_input(
-        "Your birth year", min_value=1930, max_value=2016, value=2000, step=1,
+        "Your birth year", min_value=1930, max_value=2016, value=2003, step=1,
     )
     share, win_lo, win_hi = taste.formative_share(df, int(birth_year))
     st.metric(
